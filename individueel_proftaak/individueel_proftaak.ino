@@ -1,240 +1,64 @@
 #include <OneWire.h>
+#include <MQ2.h> 
 #include <DallasTemperature.h> 
 
 /** auteur Stijn van Berkel
  *  01/04/2020
  */
-float temp = 0.0;
-int oneWireBus = 12;
-OneWire oneWire(oneWireBus);
-DallasTemperature sensors(&oneWire);
-int pinA = 9;
-int pinB = 5;
-int pinC = 2;
-int pinD = 3;
-int pinE = 4;
-int pinF = 7;
-int pinG = 8;
+int red_light_pin= 11;
+int green_light_pin = 10;
+int blue_light_pin = 9;
 
 
+//I2C pins declaration
+int Analog_Input = A0;
+long smoke;
 
-void setup() {
-    Serial.begin(9600);
-    Serial.println("Stijn van Berkel indidueel");
-    sensors.begin();
+MQ2 mq2(Analog_Input);
 
-    pinMode(pinA, OUTPUT);
-    pinMode(pinB, OUTPUT);
-    pinMode(pinC, OUTPUT);
-    pinMode(pinD, OUTPUT);
-    pinMode(pinE, OUTPUT);
-    pinMode(pinF, OUTPUT);
-    pinMode(pinG, OUTPUT);
-   
+void setup(){
+  Serial.begin(9600);
+  mq2.begin();
+  pinMode(red_light_pin, OUTPUT);
+  pinMode(green_light_pin, OUTPUT);
+  pinMode(blue_light_pin, OUTPUT);
+}
+void loop(){
+  float* values= mq2.read(true);
+  smoke = mq2.readSmoke(); //if smoke is detected it goes up from 1-3
+//
+  Serial.print("sMOKE");
+  Serial.print(smoke);
+  Serial.println();
+  if(smoke >= 1.0){
+    smokeDetected();
+  }else{
+    RGB_color(255, 255, 255); // White
+  }
+  
 }
 
-/* alle magic nummers in de volgende code referen naar temperatuur in graden celcius m.u.v. de delay dit zijn millisecoden */
-void loop() {
-    /*zorgt dat de temperatuur op de console te zien is ter vergelijking*/
-    sensors.requestTemperatures();
-    temp = sensors.getTempCByIndex(0);
-    Serial.print("temperature is: ");
-    Serial.println(temp);
+//changes led to given value.
+void RGB_color(int red_light_value, int green_light_value, int blue_light_value){
+  analogWrite(red_light_pin, red_light_value);
+  analogWrite(green_light_pin, green_light_value);
+  analogWrite(blue_light_pin, blue_light_value);
+}
 
+void smokeDetected(){
 
-    /* print 19C op 7 segment display*/
-    if(temp >= 19 && temp < 20){
-        digitalWrite(pinA, LOW);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, HIGH);
-        digitalWrite(pinD, LOW);
-        digitalWrite(pinE, LOW);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB,  HIGH);
-        digitalWrite(pinC, HIGH );
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, LOW);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        /* print letter c voor graden*/
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-    }
-    /* print 20C op 7 segment display*/
-    else if(temp >= 20 && temp < 21){
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        digitalWrite(pinA, HIGH);  
-        digitalWrite(pinB,  HIGH);
-        digitalWrite(pinC, HIGH );
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-        /* print letter c voor graden*/
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);     
-    }
-    /* print 21C op 7 segment display*/
-    else if(temp >= 21 && temp < 22){
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        digitalWrite(pinA, LOW);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, HIGH);
-        digitalWrite(pinD, LOW);
-        digitalWrite(pinE, LOW);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-        /* print letter c voor graden*/
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-    }
-    /* print 22C op 7 segment display*/
-    else if(temp >= 22 && temp < 23){
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        /* print letter c voor graden*/
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-    }
-
-    /* print 23C op 7 segment display*/
-    else if(temp >= 23 && temp <24){
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, HIGH);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, LOW);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        /* print letter c voor graden*/
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-    }
-    else if(temp >= 24 && temp <25){
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        digitalWrite(pinA, LOW);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, HIGH);
-        digitalWrite(pinD, LOW);
-        digitalWrite(pinE, LOW);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        /* print letter c voor graden*/
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-    }
-    else if(temp >= 25 && temp < 26){
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, HIGH);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, LOW);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        /* print letter c voor graden*/
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-    }
+    RGB_color(255, 0, 0); // Red
+    delay(100);
+    RGB_color(0, 255, 0); // Green
+    delay(100);
+    RGB_color(0, 0, 255); // Blue
+    delay(100);
+    RGB_color(255, 255, 125); // Raspberry
+    delay(100);
+    RGB_color(0, 255, 255); // Cyan
+    delay(100);
+    RGB_color(255, 0, 255); // Magenta
+    delay(100);
+    RGB_color(255, 255, 0); // Yellow
+    delay(100); 
 }
