@@ -11,6 +11,9 @@ int red_light_pin= 13;
 int green_light_pin = 12;
 int blue_light_pin = 11;
 
+//buzzer pin
+const int buzzer = 3;
+
 //passcode for keypad
 String code = "2468";
 
@@ -43,6 +46,7 @@ void setup()
   pinMode(red_light_pin, OUTPUT);
   pinMode(green_light_pin, OUTPUT);
   pinMode(blue_light_pin, OUTPUT);
+  pinMode(buzzer, OUTPUT);
 }
 
 void loop()
@@ -70,8 +74,8 @@ void RGB_color(int red_light_value, int green_light_value, int blue_light_value)
 
 void smokeDetected()
 {
-  bool isGuessed = false;
-  while(1)
+  bool isGuessed = false; //boolean for the right or wrong password.
+  while(true)
   {
     char keypressed = keypad.getKey();
     if(keypressed == '*')
@@ -79,6 +83,7 @@ void smokeDetected()
       Serial.println("* PRESSED");
       isGuessed = Getpassword();
     }
+    
     if(isGuessed){
       RGB_color(0, 255, 0);
       Serial.println("alarm stopped");
@@ -87,6 +92,14 @@ void smokeDetected()
     else
     { 
     Serial.println("SmokeDetected");
+    discoAlarm();
+    } 
+  }
+}
+
+void discoAlarm()
+{
+    tone(buzzer, 500);
     RGB_color(255, 0, 0); // Red
     delay(100);
     RGB_color(0, 255, 0); // Green
@@ -101,8 +114,7 @@ void smokeDetected()
     delay(100);
     RGB_color(255, 255, 0); // Yellow
     delay(100);
-    } 
-  }
+    noTone(buzzer);
 }
 
 bool Getpassword()
