@@ -7,6 +7,7 @@
 /** auteur Stijn van Berkel
  *  24/06/2020
  *  smokedetector with discolights and a buzzer.
+ *  all code was written by me with help from google
  */
 
  //humidity and temperature sensor pin
