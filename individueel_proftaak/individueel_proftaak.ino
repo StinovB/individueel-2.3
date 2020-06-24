@@ -1,240 +1,204 @@
 #include <OneWire.h>
-#include <DallasTemperature.h> 
+#include <MQ2.h> 
+#include <DallasTemperature.h>
+#include <Keypad.h> 
+#include <dht.h> 
 
 /** auteur Stijn van Berkel
- *  01/04/2020
+ *  24/06/2020
+ *  smokedetector with discolights and a buzzer.
+ *  all code was written by me with help from google
  */
-float temp = 0.0;
-int oneWireBus = 12;
-OneWire oneWire(oneWireBus);
-DallasTemperature sensors(&oneWire);
-int pinA = 9;
-int pinB = 5;
-int pinC = 2;
-int pinD = 3;
-int pinE = 4;
-int pinF = 7;
-int pinG = 8;
 
+ //humidity and temperature sensor pin
+ dht DHT;
+ int DHT11_pin = 2;
+ 
+ //rgb colors
+int red_light_pin= 13;
+int green_light_pin = 12;
+int blue_light_pin = 11;
 
+//buzzer pin
+const int buzzer = 3;
 
-void setup() {
-    Serial.begin(9600);
-    Serial.println("Stijn van Berkel indidueel");
-    sensors.begin();
+//passcode for keypad
+String code = "2468";
+String easterEggCode = "6969";
 
-    pinMode(pinA, OUTPUT);
-    pinMode(pinB, OUTPUT);
-    pinMode(pinC, OUTPUT);
-    pinMode(pinD, OUTPUT);
-    pinMode(pinE, OUTPUT);
-    pinMode(pinF, OUTPUT);
-    pinMode(pinG, OUTPUT);
-   
+const byte numRows = 4;
+const byte numCols = 3;
+
+char keymap[numRows][numCols]= 
+      {
+      {'1', '2', '3'},
+      {'4', '5', '6'},
+      {'7', '8', '9'},
+      {'*', '0', '#'},
+      };
+
+byte rowPins[numRows] = {10, 9, 8, 7};
+byte colPins[numCols] = {6,5,4};
+
+Keypad keypad = Keypad(makeKeymap(keymap), rowPins, colPins, numRows, numCols);
+
+//I2C pins declaration
+int Analog_Input = A0;
+long smoke;
+
+MQ2 mq2(Analog_Input);
+
+void setup()
+{  
+  Serial.begin(9600);
+  mq2.begin();
+  pinMode(red_light_pin, OUTPUT);
+  pinMode(green_light_pin, OUTPUT);
+  pinMode(blue_light_pin, OUTPUT);
+  pinMode(buzzer, OUTPUT);
 }
 
-/* alle magic nummers in de volgende code referen naar temperatuur in graden celcius m.u.v. de delay dit zijn millisecoden */
-void loop() {
-    /*zorgt dat de temperatuur op de console te zien is ter vergelijking*/
-    sensors.requestTemperatures();
-    temp = sensors.getTempCByIndex(0);
-    Serial.print("temperature is: ");
-    Serial.println(temp);
+void loop()
+{  
+  float* values= mq2.read(true);
+  smoke = mq2.readSmoke(); 
+   
+  if(smoke >= 1.0 && getTemperature > 31)
+  {
+    smokeDetected();
+  }
+  else
+  {
+    RGB_color(255, 255, 255); // White
+  }
+}
 
+//changes led to given value.
+void RGB_color(int red_light_value, int green_light_value, int blue_light_value)
+{
+  analogWrite(red_light_pin, red_light_value);
+  analogWrite(green_light_pin, green_light_value);
+  analogWrite(blue_light_pin, blue_light_value);
+}
 
-    /* print 19C op 7 segment display*/
-    if(temp >= 19 && temp < 20){
-        digitalWrite(pinA, LOW);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, HIGH);
-        digitalWrite(pinD, LOW);
-        digitalWrite(pinE, LOW);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB,  HIGH);
-        digitalWrite(pinC, HIGH );
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, LOW);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        /* print letter c voor graden*/
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);
+//this is the operation that shows that smoke has been detected. It will run the buzzer and the discolights
+//while nothing is happening. When the keypad has a '*' input it will read for the correct combination. 
+//when correct. The lights and buzzer stop. When incorrect the alarm will keep going. 
+void smokeDetected()
+{
+  bool isGuessed = false; //boolean for the right or wrong password.
+  while(true)
+  {
+    char keypressed = keypad.getKey();
+    if(keypressed == '*')
+    {
+      Serial.println("* PRESSED");
+      isGuessed = Getpassword();
     }
-    /* print 20C op 7 segment display*/
-    else if(temp >= 20 && temp < 21){
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        digitalWrite(pinA, HIGH);  
-        digitalWrite(pinB,  HIGH);
-        digitalWrite(pinC, HIGH );
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-        /* print letter c voor graden*/
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);     
+    
+    if(isGuessed)
+    {
+      RGB_color(0, 255, 0);
+      Serial.println("alarm stopped");
+      return;
     }
-    /* print 21C op 7 segment display*/
-    else if(temp >= 21 && temp < 22){
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        digitalWrite(pinA, LOW);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, HIGH);
-        digitalWrite(pinD, LOW);
-        digitalWrite(pinE, LOW);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-        /* print letter c voor graden*/
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-    }
-    /* print 22C op 7 segment display*/
-    else if(temp >= 22 && temp < 23){
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        /* print letter c voor graden*/
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-    }
+    else
+    { 
+    Serial.println("SmokeDetected");
+    discoAlarm();
+    } 
+  }
+}
 
-    /* print 23C op 7 segment display*/
-    else if(temp >= 23 && temp <24){
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, HIGH);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, LOW);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        /* print letter c voor graden*/
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-    }
-    else if(temp >= 24 && temp <25){
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        digitalWrite(pinA, LOW);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, HIGH);
-        digitalWrite(pinD, LOW);
-        digitalWrite(pinE, LOW);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        /* print letter c voor graden*/
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-    }
-    else if(temp >= 25 && temp < 26){
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, HIGH);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, LOW);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, HIGH);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, LOW);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, HIGH);
-        delay(1000);
-        /* print letter c voor graden*/
-        digitalWrite(pinA, HIGH);
-        digitalWrite(pinB, LOW);
-        digitalWrite(pinC, LOW);
-        digitalWrite(pinD, HIGH);
-        digitalWrite(pinE, HIGH);
-        digitalWrite(pinF, HIGH);
-        digitalWrite(pinG, LOW);
-        delay(1000);
-    }
+//turns on the buzzersound and the lights. 
+void discoAlarm()
+{
+    tone(buzzer, 500);
+    RGB_color(255, 0, 0); // Red
+    delay(100);
+    RGB_color(0, 255, 0); // Green
+    delay(100);
+    RGB_color(0, 0, 255); // Blue
+    delay(100);
+    RGB_color(255, 255, 125); // Raspberry
+    delay(100);
+    RGB_color(0, 255, 255); // Cyan
+    delay(100);
+    RGB_color(255, 0, 255); // Magenta
+    delay(100);
+    RGB_color(255, 255, 0); // Yellow
+    delay(100);
+    noTone(buzzer);
+}
+
+//checks if the input is correct to the password and reacts accordingly. 
+bool Getpassword()
+{
+  RGB_color(255, 0, 0);
+  while(1)
+   {
+     String userCombination;
+     userCombination = getCombination();
+     if(userCombination == code)
+     {
+      Serial.println("Code Correct");
+      return true;
+     } 
+     else if(userCombination == easterEggCode)
+     {
+      Serial.println("easter egg found!!");
+      easterEgg();
+      return false;
+     }
+     else
+     {
+      Serial.println("wrong code");
+      return false;
+     }
+   }
+}
+
+//shows a little easteregg
+void easterEgg()
+{
+  int frequency = 100;
+  for(int i = 0; i < 10; i++){
+    frequency = i*100;
+    tone(buzzer, frequency);
+    delay(100);
+  }
+}
+
+//gets the user input 
+String getCombination()
+{
+  int passwordIndex = 0;
+  String guessedPassword = "";
+
+  while(passwordIndex < 4)
+  {
+    char keyPressed = keypad.waitForKey();
+
+    guessedPassword += keyPressed;
+    passwordIndex++;
+    delay(125);
+  }
+  
+  return guessedPassword;
+}
+
+//gets the temperature from the dht sensor.
+double getTemperature()
+{
+  int chk = DHT.read11(DHT11_pin);
+  delay(1200);
+  return DHT.temperature;
+}
+
+//gets the humidity from the dht sensor.
+double getHumidity()
+{
+  int chk = DHT.read11(DHT11_pin);
+  delay(1200);
+  return DHT.humidity;
 }
