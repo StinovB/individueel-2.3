@@ -2,10 +2,17 @@
 #include <MQ2.h> 
 #include <DallasTemperature.h>
 #include <Keypad.h> 
+#include <dht.h> 
 
 /** auteur Stijn van Berkel
- *  01/04/2020
+ *  24/06/2020
+ *  smokedetector with discolights and a buzzer.
  */
+
+ //humidity and temperature sensor pin
+ dht DHT;
+ int DHT11_pin = 2;
+ 
  //rgb colors
 int red_light_pin= 13;
 int green_light_pin = 12;
@@ -16,6 +23,7 @@ const int buzzer = 3;
 
 //passcode for keypad
 String code = "2468";
+String easterEggCode = "6969";
 
 const byte numRows = 4;
 const byte numCols = 3;
@@ -52,9 +60,9 @@ void setup()
 void loop()
 {  
   float* values= mq2.read(true);
-  smoke = mq2.readSmoke(); //if smoke is detected it goes up from 1-3
+  smoke = mq2.readSmoke(); 
    
-  if(smoke >= 1.0)
+  if(smoke >= 1.0 && getTemperature > 31)
   {
     smokeDetected();
   }
@@ -72,6 +80,9 @@ void RGB_color(int red_light_value, int green_light_value, int blue_light_value)
   analogWrite(blue_light_pin, blue_light_value);
 }
 
+//this is the operation that shows that smoke has been detected. It will run the buzzer and the discolights
+//while nothing is happening. When the keypad has a '*' input it will read for the correct combination. 
+//when correct. The lights and buzzer stop. When incorrect the alarm will keep going. 
 void smokeDetected()
 {
   bool isGuessed = false; //boolean for the right or wrong password.
@@ -84,7 +95,8 @@ void smokeDetected()
       isGuessed = Getpassword();
     }
     
-    if(isGuessed){
+    if(isGuessed)
+    {
       RGB_color(0, 255, 0);
       Serial.println("alarm stopped");
       return;
@@ -97,6 +109,7 @@ void smokeDetected()
   }
 }
 
+//turns on the buzzersound and the lights. 
 void discoAlarm()
 {
     tone(buzzer, 500);
@@ -117,6 +130,7 @@ void discoAlarm()
     noTone(buzzer);
 }
 
+//checks if the input is correct to the password and reacts accordingly. 
 bool Getpassword()
 {
   RGB_color(255, 0, 0);
@@ -124,10 +138,17 @@ bool Getpassword()
    {
      String userCombination;
      userCombination = getCombination();
-     if(userCombination == code){
+     if(userCombination == code)
+     {
       Serial.println("Code Correct");
       return true;
      } 
+     else if(userCombination == easterEggCode)
+     {
+      Serial.println("easter egg found!!");
+      easterEgg();
+      return false;
+     }
      else
      {
       Serial.println("wrong code");
@@ -136,6 +157,18 @@ bool Getpassword()
    }
 }
 
+//shows a little easteregg
+void easterEgg()
+{
+  int frequency = 100;
+  for(int i = 0; i < 10; i++){
+    frequency = i*100;
+    tone(buzzer, frequency);
+    delay(100);
+  }
+}
+
+//gets the user input 
 String getCombination()
 {
   int passwordIndex = 0;
@@ -151,4 +184,20 @@ String getCombination()
   }
   
   return guessedPassword;
+}
+
+//gets the temperature from the dht sensor.
+double getTemperature()
+{
+  int chk = DHT.read11(DHT11_pin);
+  delay(1200);
+  return DHT.temperature;
+}
+
+//gets the humidity from the dht sensor.
+double getHumidity()
+{
+  int chk = DHT.read11(DHT11_pin);
+  delay(1200);
+  return DHT.humidity;
 }
